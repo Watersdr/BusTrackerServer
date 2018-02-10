@@ -1,0 +1,24 @@
+{
+  "name": "bustrackerserver",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Watersdr/BusTrackerServer.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Watersdr/BusTrackerServer/issues"
+  },
+  "homepage": "https://github.com/Watersdr/BusTrackerServer#readme",
+  "dependencies": {
+    "express": "^4.16.2",
+    "http": "0.0.0",
+    "socket.io": "^2.0.4"
+  }
+}
