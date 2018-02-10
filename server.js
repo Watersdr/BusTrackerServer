@@ -1,13 +1,33 @@
-var express = require('express');
-var http = require('http')
-var socketio = require('socket.io');
+var WebSocketServer = require('websocket').server;
+var http = require('http');
 
-var app = express();
-var server = http.Server(app);
-var websocket = socketio(server);
-server.listen(3000, () => console.log('listening on *:3000'));
+var server = http.createServer(function(request, response) {
+  // process HTTP request. Since we're writing just WebSockets
+  // server we don't have to implement anything.
+});
+server.listen(1337, function() { });
 
-// The event will be called when a client is connected.
-websocket.on('connection', (socket) => {
-  console.log('A client just joined on', socket.id);
+// create the server
+wsServer = new WebSocketServer({
+  httpServer: server
+});
+
+// WebSocket server
+wsServer.on('request', function(request) {
+  var connection = request.accept(null, request.origin);
+
+  connection.on('open', function() {
+    console.log('Client connection');
+  });
+  // This is the most important callback for us, we'll handle
+  // all messages from users here.
+  connection.on('message', function(message) {
+    if (message.type === 'utf8') {
+      // process WebSocket message
+    }
+  });
+
+  connection.on('close', function(connection) {
+    // close user connection
+  });
 });
