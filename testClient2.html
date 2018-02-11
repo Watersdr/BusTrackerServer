@@ -15,7 +15,7 @@
     console.log('connected to server');
     websocket.send(JSON.stringify({
       method: 'publish',
-      locationID: '1',
+      locationID: '2',
     }));
 
     setInterval(() => {
@@ -27,7 +27,7 @@
           latitude: lat,
           longitude: long,
         },
-        locationID: '1'
+        locationID: '2'
       }));
       //Update latitude and longitude up to a minute increment
       lat += Math.random() * minuteLat * (Math.random() < 0.5 ? -1 : 1);
