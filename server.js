@@ -39,7 +39,8 @@ function subscribe(ws, jsonData)
     if (isNaN(locationID))
         return;
     let subscription = LocationMap[locationID];
-    subscription.subscribe(ws);
+    if (subscription)
+        subscription.subscribe(ws);
 }
 
 function unsubscribe(ws, jsonData)
@@ -57,7 +58,15 @@ function publish(ws, jsonData)
 
 function emitLocation(ws, jsonData)
 {
-
+    const locationID = jsonData.locationID;
+    if (isNaN(locationID))
+        return;
+    let subscription  = LocationMap[locationID];
+    if (subscription)
+    {
+        subscription.addNewLocation(jsonData.location);
+        subscription.broadcast();
+    }
 }
 
 function endPublish(ws, jsonData)
@@ -72,6 +81,11 @@ class Subscription {
         this.subscribers = [];
         this.locationHistory = [];
         this.latestLocation = {};
+    }
+
+    addNewLocation(location) {
+        this.latestLocation = location;
+        this.locationHistory.push(location);
     }
 
     subscribe(subscriberSocket) {
