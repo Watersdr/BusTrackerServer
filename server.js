@@ -49,7 +49,7 @@ function unsubscribe(ws, jsonData) {
 function getHistory(ws, jsonData) {
   console.log('getHistory');
   const locationID = jsonData.locationID;
-  let subscription = LocationMap[locationsID];
+  let subscription = LocationMap[locationID];
   if (subscription) {
     subscription.sendHistory(ws);
   }
@@ -91,6 +91,8 @@ class Subscription {
 
   subscribe(subscriberSocket) {
     this.subscribers.push(subscriberSocket);
+    const message = new SubscriptionSuccessMessage([subscriberSocket]);
+    message.send();
   }
 
   unsubscribe(subscriberSocket) {
@@ -98,7 +100,7 @@ class Subscription {
   }
 
   sendHistory(ws) {
-    const message = new HistoryLocationMessage([ws], this.locationHistory);
+    const message = new LocationHistoryMessage([ws], this.locationHistory);
     message.send();
   }
 
@@ -130,6 +132,12 @@ class Message {
       for (let receiver of this.receivers)
         receiver.send(message);
     }
+  }
+}
+
+class SubscriptionSuccessMessage extends Message {
+  constructor(receivers) {
+    super(receivers, 'SubscriptionSuccess');
   }
 }
 
