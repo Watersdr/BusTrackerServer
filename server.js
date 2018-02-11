@@ -4,11 +4,13 @@ const wss = new WebSocket.Server({ port: 3000 });
 
 let LocationMap = {};
 let MethodMap = {};
-MethodMap['subscribe'] = subscribe;
-MethodMap['unsubscribe'] = unsubscribe;
+// Publisher methods
 MethodMap['publish'] = publish;
 MethodMap['endPublish'] = endPublish;
 MethodMap['emitLocation'] = emitLocation;
+MethodMap['getHistory'] = getHistory;
+MethodMap['subscribe'] = subscribe;
+MethodMap['unsubscribe'] = unsubscribe;
 
 wss.on('connection', function connection(ws) {
   ws.on('message', data => {
@@ -41,7 +43,16 @@ function subscribe(ws, jsonData) {
 }
 
 function unsubscribe(ws, jsonData) {
+  console.log('unsubscribe');
+}
 
+function getHistory(ws, jsonData) {
+  console.log('getHistory');
+  const locationID = jsonData.locationID;
+  let subscription = LocationMap[locationsID];
+  if (subscription) {
+    subscription.sendHistory(ws);
+  }
 }
 
 function publish(ws, jsonData) {
@@ -61,7 +72,7 @@ function emitLocation(ws, jsonData) {
 }
 
 function endPublish(ws, jsonData) {
-
+  console.log('endPublish');
 }
 
 class Subscription {
@@ -84,6 +95,11 @@ class Subscription {
 
   unsubscribe(subscriberSocket) {
 
+  }
+
+  sendHistory(ws) {
+    const message = new HistoryLocationMessage([ws], this.locationHistory);
+    message.send();
   }
 
   broadcast() {
@@ -122,5 +138,11 @@ class LatestLocationMessage extends Message {
     // Don't pass in an ack (callback) because for now the server
     // doesn't care if the client gets the message or not
     super(receivers, 'LatestLocation', location);
+  }
+}
+
+class LocationHistoryMessage extends Message {
+  constructor(receivers, locations) {
+    super(receivers, 'LocationHistory', locations)
   }
 }
