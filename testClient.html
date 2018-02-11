@@ -1,0 +1,39 @@
+<html>
+<script>
+  let websocket = new WebSocket('ws://192.168.0.178:3000');
+  const maxLat = 5;
+  const maxLong = 5;
+
+  // Calculate a minute of latitude/longitude
+  const minuteLat = 1 / (maxLat * 10);
+  const minuteLong = 1 / (maxLong * 10);
+  let lat = 39.7684;
+  let long = -86.1581;
+
+  websocket.onopen = () => {
+    // connection opened
+    console.log('connected to server');
+    websocket.send(JSON.stringify({
+      method: 'publish',
+      locationID: '123',
+    }));
+
+    setInterval(() => {
+      // Send to Client
+      console.log('sending');
+      websocket.send(JSON.stringify({
+        method: 'emitLocation',
+        location: {
+          latitude: lat,
+          longitude: long,
+        },
+        locationID: '123'
+      }));
+      //Update latitude and longitude up to a minute increment
+      lat += Math.random() * minuteLat * (Math.random() < 0.5 ? -1 : 1);
+      long += Math.random() * minuteLong * (Math.random() < 0.5 ? -1 : 1);
+    }, 3000);
+  };
+</script>
+
+</html>

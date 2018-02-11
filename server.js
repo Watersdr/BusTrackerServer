@@ -4,130 +4,123 @@ const wss = new WebSocket.Server({ port: 3000 });
 
 let LocationMap = {};
 let MethodMap = {};
-methodMap['subscribe'] = subscribe;
-methodMap['unsubscribe'] = unsubscribe;
-methodMap['publish'] = publish;
-methodMap['endPublish'] = endPublish;
-methodMap['emitLocation'] = emitLocation;
+MethodMap['subscribe'] = subscribe;
+MethodMap['unsubscribe'] = unsubscribe;
+MethodMap['publish'] = publish;
+MethodMap['endPublish'] = endPublish;
+MethodMap['emitLocation'] = emitLocation;
 
 wss.on('connection', function connection(ws) {
-    ws.on('message', data => {
-        let jsonData;
-        try {
-            jsonData = JSON.parse(data);
-        }
-        catch(error) {
-            console.log('Invalid JSON');
-        }
-        const method = methodMap[jsonData.method];
-        if(!method)
-        {
-            console.log('Invalid method');
-        }
-        try {
-            method(jsonData);
-        }
-        catch(error) {
-            console.log('Internal error handling client message');
-        }
-    });
+  ws.on('message', data => {
+    let jsonData;
+    try {
+      jsonData = JSON.parse(data);
+    }
+    catch (error) {
+      console.log('Invalid JSON');
+    }
+    const method = MethodMap[jsonData.method];
+    if (!method) {
+      console.log('Invalid method');
+    }
+    try {
+      method(ws, jsonData);
+    }
+    catch (error) {
+      console.log('Internal error handling client message:', error);
+    }
+  });
 });
 
-function subscribe(ws, jsonData)
-{
-    const locationID = jsonData.locationID;
-    if (isNaN(locationID))
-        return;
-    let subscription = LocationMap[locationID];
-    if (subscription)
-        subscription.subscribe(ws);
+function subscribe(ws, jsonData) {
+  console.log('subscribe');
+  const locationID = jsonData.locationID;
+  let subscription = LocationMap[locationID];
+  if (subscription)
+    subscription.subscribe(ws);
 }
 
-function unsubscribe(ws, jsonData)
-{
+function unsubscribe(ws, jsonData) {
 
 }
 
-function publish(ws, jsonData)
-{
-    const locationID = jsonData.locationID;
-    if (isNaN(locationID))
-        return;
-    LocationMap[locationID] = new Subscription(ws, locationID);
+function publish(ws, jsonData) {
+  console.log('publish');
+  const locationID = jsonData.locationID;
+  LocationMap[locationID] = new Subscription(ws, locationID);
 }
 
-function emitLocation(ws, jsonData)
-{
-    const locationID = jsonData.locationID;
-    if (isNaN(locationID))
-        return;
-    let subscription  = LocationMap[locationID];
-    if (subscription)
-    {
-        subscription.addNewLocation(jsonData.location);
-        subscription.broadcast();
-    }
+function emitLocation(ws, jsonData) {
+  console.log('emitLocation');
+  const locationID = jsonData.locationID;
+  let subscription = LocationMap[locationID];
+  if (subscription) {
+    subscription.addNewLocation(jsonData.location);
+    subscription.broadcast();
+  }
 }
 
-function endPublish(ws, jsonData)
-{
+function endPublish(ws, jsonData) {
 
 }
 
 class Subscription {
-    constructor(publisherSocket,locationID) {
-        this.publisherSocket = publisherSocket;
-        this.locationID = locationID;
-        this.subscribers = [];
-        this.locationHistory = [];
-        this.latestLocation = {};
-    }
+  constructor(publisherSocket, locationID) {
+    this.publisherSocket = publisherSocket;
+    this.locationID = locationID;
+    this.subscribers = [];
+    this.locationHistory = [];
+    this.latestLocation = {};
+  }
 
-    addNewLocation(location) {
-        this.latestLocation = location;
-        this.locationHistory.push(location);
-    }
+  addNewLocation(location) {
+    this.latestLocation = location;
+    this.locationHistory.push(location);
+  }
 
-    subscribe(subscriberSocket) {
-        this.subscribers.push(subscriberSocket);
-    }
+  subscribe(subscriberSocket) {
+    this.subscribers.push(subscriberSocket);
+  }
 
-    unsubscribe(subscriberSocket) {
+  unsubscribe(subscriberSocket) {
 
-    }
+  }
 
-    broadcast() {
-        const message = new LatestLocationMessage(subscribers, latestLocation);
-        message.send();
-    }
-}
-
-class LatestLocationMessage extends Message {
-    constructor(receivers, location) {
-        // Don't pass in an ack (callback) because for now the server
-        // doesn't care if the client gets the message or not
-        super(receivers, 'LatestLocation', location);
-    }
+  broadcast() {
+    const message = new LatestLocationMessage(this.subscribers, this.latestLocation);
+    message.send();
+  }
 }
 
 class Message {
-    constuctor(receivers, method, payload, ack){
-        this.receivers = receivers;
-        this.method = method;
-        this.payload = payload;
-        this.ack = ack;
-    }
+  constructor(receivers, method, payload, ack) {
+    this.receivers = receivers;
+    this.method = method;
+    this.payload = payload;
+    this.ack = ack;
+  }
 
-    send() {
-        const data = {method: this.method, ...this.payload};
-        const message = JSON.stringify(data);
-        if(this.ack) {
-            for (let receiver of this.receivers)
-                receiver.send(message, this.ack);
-        }
-        else {
-            for (let receiver of this.receivers)
-                receiver.send(message);
-        }
+  send() {
+    const data = {
+      method: this.method,
+      payload: this.payload
+    };
+    const message = JSON.stringify(data);
+    if (this.ack) {
+      for (let receiver of this.receivers)
+        receiver.send(message, this.ack);
     }
+    else {
+      for (let receiver of this.receivers)
+        receiver.send(message);
+    }
+  }
+}
+
+class LatestLocationMessage extends Message {
+  constructor(receivers, location) {
+    // Don't pass in an ack (callback) because for now the server
+    // doesn't care if the client gets the message or not
+    super(receivers, 'LatestLocation', location);
+  }
 }
